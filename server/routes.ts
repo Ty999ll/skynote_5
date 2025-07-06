@@ -538,7 +538,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 const ADMIN_REGISTRATION_KEY = process.env.ADMIN_REGISTRATION_KEY; // Direct read from .env
 
 if (!ADMIN_REGISTRATION_KEY) {
-  // This is a good check to ensure the env var is actually loaded
   console.error('ADMIN_REGISTRATION_KEY environment variable is not set!');
   return res.status(500).json({ message: 'Server configuration error: Admin key missing' });
 }
