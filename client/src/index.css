@@ -1,0 +1,245 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(263, 85%, 60%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(142, 76%, 36%);
+  --secondary-foreground: hsl(355, 7%, 97%);
+  --accent: hsl(43, 96%, 56%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* Sidebar colors */
+  --sidebar-background: hsl(0, 0%, 98%);
+  --sidebar-foreground: hsl(240, 5.3%, 26.1%);
+  --sidebar-primary: hsl(263, 85%, 60%);
+  --sidebar-primary-foreground: hsl(210, 40%, 98%);
+  --sidebar-accent: hsl(240, 4.8%, 95.9%);
+  --sidebar-accent-foreground: hsl(240, 5.9%, 10%);
+  --sidebar-border: hsl(220, 13%, 91%);
+  --sidebar-ring: hsl(217.2, 32.6%, 17.5%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(263, 85%, 60%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(142, 76%, 36%);
+  --secondary-foreground: hsl(355, 7%, 97%);
+  --accent: hsl(43, 96%, 56%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  
+  /* Dark sidebar colors */
+  --sidebar-background: hsl(240, 5.9%, 10%);
+  --sidebar-foreground: hsl(240, 4.8%, 95.9%);
+  --sidebar-primary: hsl(263, 85%, 60%);
+  --sidebar-primary-foreground: hsl(210, 40%, 98%);
+  --sidebar-accent: hsl(240, 3.7%, 15.9%);
+  --sidebar-accent-foreground: hsl(240, 4.8%, 95.9%);
+  --sidebar-border: hsl(240, 3.7%, 15.9%);
+  --sidebar-ring: hsl(240, 4.9%, 83.9%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom Skynote styles */
+.skynote-gradient {
+  background: linear-gradient(135deg, hsl(263, 85%, 60%) 0%, hsl(142, 76%, 36%) 100%);
+}
+
+.skynote-logo {
+  background: hsl(263, 85%, 60%);
+}
+
+/* Achievement card animations */
+.achievement-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.achievement-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.achievement-unlocked {
+  border-color: hsl(142, 76%, 36%);
+  background: linear-gradient(135deg, hsl(142, 76%, 98%) 0%, hsl(142, 76%, 95%) 100%);
+}
+
+.achievement-locked {
+  opacity: 0.7;
+  border-color: hsl(240, 3.7%, 85%);
+}
+
+/* Post card styles */
+.post-card {
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.post-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Guest overlay styles */
+.guest-overlay {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+}
+
+/* Progress bar animations */
+.progress-bar {
+  transition: width 0.8s ease-in-out;
+}
+
+/* Sidebar custom width */
+.sidebar-width {
+  width: 240px;
+}
+
+.content-margin {
+  margin-left: 240px;
+  margin-right: 280px;
+}
+
+.right-sidebar-width {
+  width: 280px;
+}
+
+/* Book cover aspect ratio */
+.book-cover {
+  aspect-ratio: 2/3;
+}
+
+/* Trending item hover */
+.trending-item {
+  transition: background-color 0.2s ease-in-out;
+}
+
+.trending-item:hover {
+  background-color: hsl(240, 4.8%, 95.9%);
+}
+
+/* Create button special styling */
+.create-button {
+  background: linear-gradient(135deg, hsl(263, 85%, 60%) 0%, hsl(263, 85%, 65%) 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  transition: all 0.2s ease-in-out;
+}
+
+.create-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+}
+
+/* Tab active state */
+.tab-active {
+  background: hsl(263, 85%, 60%);
+  color: hsl(210, 40%, 98%);
+}
+
+/* Leaderboard styling */
+.leaderboard-rank {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.rank-1 {
+  background: hsl(43, 96%, 56%);
+}
+
+.rank-2 {
+  background: hsl(0, 0%, 75%);
+}
+
+.rank-3 {
+  background: hsl(25, 100%, 50%);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 1024px) {
+  .content-margin {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .sidebar-width {
+    transform: translateX(-100%);
+  }
+  
+  .right-sidebar-width {
+    display: none;
+  }
+}
+
+/* Loading animations */
+.loading-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Custom scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(240, 3.7%, 15.9%) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: hsl(240, 3.7%, 15.9%);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(240, 5%, 64.9%);
+}
