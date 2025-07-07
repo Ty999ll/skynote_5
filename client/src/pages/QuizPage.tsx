@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { QuizCard } from '@/components/Quiz/QuizCard';
 import { Clock, Users, Trophy, BookOpen, Plus, Search, Brain } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 
 interface Quiz {
   id: number;
@@ -67,7 +67,7 @@ interface CreateQuizForm {
 }
 
 export const QuizPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);

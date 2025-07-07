@@ -21,6 +21,8 @@ import session from 'express-session';
 import passport from './passport';
 import { emailService } from './email-config';
 import { configureGoogleAuth, setupGoogleRoutes } from './google-auth';
+import { insertQuizSchema, insertQuizQuestionSchema } from '@shared/schema';
+import { z } from 'zod';
 
 // Extend Express Request type to include user
 // Nicole figured out this TypeScript declaration after 2 hours of type errors!
@@ -1603,18 +1605,65 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
     }
   });
 
-  app.post("/api/quizzes", authenticateToken, async (req, res) => {
-    try {
-      const quizData = {
-        ...req.body,
-        createdBy: req.user!.id
-      };
-      const quiz = await storage.createQuiz(quizData);
-      res.status(201).json(quiz);
-    } catch (error) {
-      res.status(500).json({ message: "Server error", error });
+ app.post("/api/quizzes", authenticateToken, async (req, res) => {
+  try {
+    // Add this console.log to see the exact payload received from the frontend
+    console.log("Received quiz creation request body:", JSON.stringify(req.body, null, 2));
+
+    const { questions, ...quizDataWithoutQuestions } = req.body; // Extract questions first
+
+    // 1. Validate the main quiz properties (excluding the 'questions' array)
+    const validatedQuizMainData = insertQuizSchema.parse(quizDataWithoutQuestions);
+
+    // 2. Validate the questions array if it exists
+    if (questions && Array.isArray(questions)) {
+      // This temporary schema is used to validate client-side question data.
+      // We omit `quizId` and `order` because those are generated on the server.
+      const insertableQuestionSchema = insertQuizQuestionSchema.omit({ quizId: true, order: true });
+      
+      questions.forEach((q: any, index: number) => {
+        try {
+          insertableQuestionSchema.parse(q);
+        } catch (questionError) {
+          if (questionError instanceof z.ZodError) {
+            // Throw a specific error if a question is invalid, including its index
+            throw new Error(`Invalid data for question at index ${index}: ${questionError.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ')}`);
+          }
+          throw questionError; // Re-throw other unexpected errors
+        }
+      });
+    } else {
+        // This block handles cases where no questions array is provided.
+        // Depending on your requirements, you might want to enforce that
+        // a quiz *must* have questions (e.g., throw an error here).
+        // For now, it allows creating a quiz with 0 questions.
+        console.warn("No questions array provided for quiz creation.");
     }
-  });
+
+    // Combine validated main data with the questions array and the createdBy user ID
+    const quiz = await storage.createQuiz({
+      ...validatedQuizMainData,
+      questions: questions, // Pass the original questions array to createQuiz for insertion
+      createdBy: req.user!.id // Get the user ID from the authenticated token
+    });
+
+    res.status(201).json(quiz); // Send back the created quiz object
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      // If a Zod validation error occurs, send a 400 Bad Request with details
+      console.error("Zod validation error during quiz creation:", error.errors);
+      res.status(400).json({ message: "Invalid quiz data (Zod validation failed)", errors: error.errors });
+    } else if (error instanceof Error) {
+      // Catch any other generic JavaScript errors (like the custom one we threw for questions)
+      console.error("General error during quiz creation:", error.message);
+      res.status(400).json({ message: error.message }); // Send the error message to the client
+    } else {
+      // Catch anything else that's not an Error object
+      console.error("Unexpected server error during quiz creation:", error);
+      res.status(500).json({ message: "Internal server error", error: String(error) });
+    }
+  }
+});
 
   app.post("/api/quizzes/submit", authenticateToken, async (req, res) => {
     try {
