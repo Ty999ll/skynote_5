@@ -63,6 +63,7 @@ interface CreateQuizForm {
     options: string[];
     correctAnswer: number;
     explanation?: string;
+    order: number;
   }[];
 }
 
@@ -245,23 +246,25 @@ export const QuizPage: React.FC = () => {
           question: '',
           options: ['', '', '', ''],
           correctAnswer: 0,
+           order: 0,
         }
       ],
     });
 
     const addQuestion = () => {
-      setFormData({
-        ...formData,
+       setFormData((prevFormData) => ({ // Use functional update for correct prev state
+    ...prevFormData,
         questions: [
-          ...formData.questions,
+          ...prevFormData.questions,
           {
             question: '',
             options: ['', '', '', ''],
             correctAnswer: 0,
+             order: prevFormData.questions.length
           }
-        ],
-      });
-    };
+    ],
+  })); 
+}; 
 
     const updateQuestion = (index: number, field: string, value: any) => {
       const newQuestions = [...formData.questions];

@@ -23,7 +23,6 @@ import { emailService } from './email-config';
 import { configureGoogleAuth, setupGoogleRoutes } from './google-auth';
 import { insertQuizSchema, insertQuizQuestionSchema } from '@shared/schema';
 import { z } from 'zod';
-
 // Extend Express Request type to include user
 // Nicole figured out this TypeScript declaration after 2 hours of type errors!
 declare global {
@@ -1605,65 +1604,62 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
     }
   });
 
- app.post("/api/quizzes", authenticateToken, async (req, res) => {
+app.post("/api/quizzes", authenticateToken, async (req, res) => {
   try {
-    // Add this console.log to see the exact payload received from the frontend
-    console.log("Received quiz creation request body:", JSON.stringify(req.body, null, 2));
+    const { questions, ...quizData } = req.body;
 
-    const { questions, ...quizDataWithoutQuestions } = req.body; // Extract questions first
+    // Combine the request data with the server-side user ID BEFORE validation
+    const dataToValidate = {
+      ...quizData,
+      createdBy: req.user!.id,
+    };
 
-    // 1. Validate the main quiz properties (excluding the 'questions' array)
-    const validatedQuizMainData = insertQuizSchema.parse(quizDataWithoutQuestions);
+    // 1. Validate the main quiz properties (which now includes 'createdBy')
+    const validatedQuizMainData = insertQuizSchema.parse(dataToValidate);
 
-    // 2. Validate the questions array if it exists
-    if (questions && Array.isArray(questions)) {
-      // This temporary schema is used to validate client-side question data.
-      // We omit `quizId` and `order` because those are generated on the server.
+    // 2. Validate the questions array
+    if (questions && Array.isArray(questions) && questions.length > 0) { // <<< CHANGE: Added check for questions.length > 0
       const insertableQuestionSchema = insertQuizQuestionSchema.omit({ quizId: true, order: true });
-      
-      questions.forEach((q: any, index: number) => {
-        try {
-          insertableQuestionSchema.parse(q);
-        } catch (questionError) {
-          if (questionError instanceof z.ZodError) {
-            // Throw a specific error if a question is invalid, including its index
-            throw new Error(`Invalid data for question at index ${index}: ${questionError.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ')}`);
-          }
-          throw questionError; // Re-throw other unexpected errors
-        }
+      questions.forEach((q: any) => {
+        insertableQuestionSchema.parse(q);
       });
-    } else {
-        // This block handles cases where no questions array is provided.
-        // Depending on your requirements, you might want to enforce that
-        // a quiz *must* have questions (e.g., throw an error here).
-        // For now, it allows creating a quiz with 0 questions.
-        console.warn("No questions array provided for quiz creation.");
+    } else { // <<< CHANGE: This 'else' block is now correctly inside the main try block and matched with its 'if'.
+      // This block handles cases where no questions array is provided or it's empty.
+      // Depending on your requirements, you might want to enforce that
+      // a quiz *must* have questions (e.g., throw an error here).
+      // For now, it allows creating a quiz with 0 questions.
+      console.warn("No questions array or empty questions array provided for quiz creation."); // <<< CHANGE: Updated warning message.
+      // If you want to enforce questions, you could throw an error here:
+      // throw new Error("A quiz must have at least one question.");
     }
 
-    // Combine validated main data with the questions array and the createdBy user ID
+    // Combine validated main data with the questions array.
+    // Note: validatedQuizMainData already contains createdBy from the dataToValidate step
     const quiz = await storage.createQuiz({
-      ...validatedQuizMainData,
+      ...validatedQuizMainData, // <<< CHANGE: Removed duplicate 'createdBy: req.user!.id' here, as it's already in validatedQuizMainData.
       questions: questions, // Pass the original questions array to createQuiz for insertion
-      createdBy: req.user!.id // Get the user ID from the authenticated token
     });
 
     res.status(201).json(quiz); // Send back the created quiz object
-  } catch (error) {
+
+  } catch (error) { // <<< CHANGE: This 'catch' block is now the single, correct catch for the entire try block.
     if (error instanceof z.ZodError) {
       // If a Zod validation error occurs, send a 400 Bad Request with details
-      console.error("Zod validation error during quiz creation:", error.errors);
+      console.error("Zod validation error during quiz creation:", error.errors); // <<< CHANGE: Clarified log message.
       res.status(400).json({ message: "Invalid quiz data (Zod validation failed)", errors: error.errors });
     } else if (error instanceof Error) {
       // Catch any other generic JavaScript errors (like the custom one we threw for questions)
-      console.error("General error during quiz creation:", error.message);
+      console.error("General error during quiz creation:", error.message); // <<< CHANGE: Clarified log message.
+      // For user-friendly messages, you might check error.message here
       res.status(400).json({ message: error.message }); // Send the error message to the client
     } else {
       // Catch anything else that's not an Error object
-      console.error("Unexpected server error during quiz creation:", error);
+      console.error("Unexpected server error during quiz creation:", error); // <<< CHANGE: Clarified log message.
       res.status(500).json({ message: "Internal server error", error: String(error) });
     }
   }
-});
+}); // <<< CHANGE: The route handler function now correctly closes at the very end.
+    // Combine the request data with the server-side user ID BEFORE validation
 
   app.post("/api/quizzes/submit", authenticateToken, async (req, res) => {
     try {
