@@ -126,21 +126,42 @@ export const QuizPage: React.FC = () => {
     }
   }, [selectedQuiz, quizStartTime, quizExpired]);
 
-  const createQuizMutation = useMutation({
-    mutationFn: async (quiz: CreateQuizForm) => {
-      const response = await fetch('/api/quizzes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(quiz),
-      });
-      return response.json();
-    },
+ const createQuizMutation = useMutation({
+  mutationFn: async (quiz: CreateQuizForm) => {
+   
+    if (!token) {
+      console.error("Authentication token is missing. Cannot create quiz.");
+      throw new Error("Authentication required to create a quiz.");
+    }
+
+    const response = await fetch('/api/quizzes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(quiz),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Failed to create quiz:", errorData);
+      throw new Error(errorData.message || "Failed to create quiz due to server error.");
+    }
+
+    return response.json();
+  },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/quizzes'] });
-      setShowCreateForm(false);
-    },
+    queryClient.invalidateQueries({ queryKey: ['/api/quizzes'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/quizzes/my', user?.id] }); // Also added this line
+    setShowCreateForm(false);
+    alert("Quiz created successfully!");
+  },
+ onError: (error) => {
+      console.error("Error creating quiz:", error);
+      alert(`Error creating quiz: ${error.message}`);
+  }
+
   });
 
   const submitQuizMutation = useMutation({
