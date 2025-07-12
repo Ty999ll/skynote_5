@@ -1623,12 +1623,9 @@ app.post("/api/quizzes", authenticateToken, async (req, res) => {
       questions.forEach((q: any) => {
         insertableQuestionSchema.parse(q);
       });
-    } else { // <<< CHANGE: This 'else' block is now correctly inside the main try block and matched with its 'if'.
-      // This block handles cases where no questions array is provided or it's empty.
-      // Depending on your requirements, you might want to enforce that
-      // a quiz *must* have questions (e.g., throw an error here).
-      // For now, it allows creating a quiz with 0 questions.
-      console.warn("No questions array or empty questions array provided for quiz creation."); // <<< CHANGE: Updated warning message.
+    } else {
+     
+      console.warn("No questions array or empty questions array provided for quiz creation."); // 
       // If you want to enforce questions, you could throw an error here:
       // throw new Error("A quiz must have at least one question.");
     }
@@ -1636,29 +1633,29 @@ app.post("/api/quizzes", authenticateToken, async (req, res) => {
     // Combine validated main data with the questions array.
     // Note: validatedQuizMainData already contains createdBy from the dataToValidate step
     const quiz = await storage.createQuiz({
-      ...validatedQuizMainData, // <<< CHANGE: Removed duplicate 'createdBy: req.user!.id' here, as it's already in validatedQuizMainData.
+      ...validatedQuizMainData, //
       questions: questions, // Pass the original questions array to createQuiz for insertion
     });
 
     res.status(201).json(quiz); // Send back the created quiz object
 
-  } catch (error) { // <<< CHANGE: This 'catch' block is now the single, correct catch for the entire try block.
+  } catch (error) { 
     if (error instanceof z.ZodError) {
       // If a Zod validation error occurs, send a 400 Bad Request with details
-      console.error("Zod validation error during quiz creation:", error.errors); // <<< CHANGE: Clarified log message.
+      console.error("Zod validation error during quiz creation:", error.errors); 
       res.status(400).json({ message: "Invalid quiz data (Zod validation failed)", errors: error.errors });
     } else if (error instanceof Error) {
       // Catch any other generic JavaScript errors (like the custom one we threw for questions)
-      console.error("General error during quiz creation:", error.message); // <<< CHANGE: Clarified log message.
+      console.error("General error during quiz creation:", error.message); 
       // For user-friendly messages, you might check error.message here
       res.status(400).json({ message: error.message }); // Send the error message to the client
     } else {
       // Catch anything else that's not an Error object
-      console.error("Unexpected server error during quiz creation:", error); // <<< CHANGE: Clarified log message.
+      console.error("Unexpected server error during quiz creation:", error); // 
       res.status(500).json({ message: "Internal server error", error: String(error) });
     }
   }
-}); // <<< CHANGE: The route handler function now correctly closes at the very end.
+}); .
     // Combine the request data with the server-side user ID BEFORE validation
 
   app.post("/api/quizzes/submit", authenticateToken, async (req, res) => {
