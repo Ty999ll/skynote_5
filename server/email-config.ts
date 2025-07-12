@@ -1,7 +1,4 @@
 import nodemailer from 'nodemailer';
-import dotenv from 'dotenv'; 
-// Load environment variables from .env file
-dotenv.config(); 
 
 interface EmailConfig {
   host: string;
@@ -23,30 +20,22 @@ class EmailService {
 
   private initializeTransporter() {
     try {
-      // Retrieve configuration from environment variables
+      // Gmail SMTP configuration
       const config: EmailConfig = {
-        host: process.env.SMTP_HOST || 'smtp.gmail.com', // Use env var, fallback to Gmail
-        port: parseInt(process.env.SMTP_PORT || '587'), // Use env var, fallback
-        secure: process.env.SMTP_SECURE === 'true',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
         auth: {
-          user: process.env.SMTP_USER!, // Use env var, assert non-null
-          pass: process.env.SMTP_PASS!, // Use env var, assert non-null
+          user: 'kimathityrell@gmail.com',
+          pass: 'mmpy ejls crdw xxss',
         },
       };
 
-      // Basic validation for critical email config
-      if (!config.auth.user || !config.auth.pass) {
-        console.error('SMTP_USER or SMTP_PASS environment variables are not set in .env or are empty.');
-        this.isConfigured = false;
-        return; // Prevent transporter creation with missing creds
-      }
-
       this.transporter = nodemailer.createTransport(config);
       this.isConfigured = true;
-      console.log('Email service configured successfully using environment variables.');
+      console.log('Gmail SMTP email service configured successfully');
     } catch (error) {
-      console.error('Failed to initialize email service:', error);
-      this.isConfigured = false;
+      console.error('Failed to initialize Gmail SMTP:', error);
     }
   }
 
@@ -56,16 +45,15 @@ class EmailService {
 
   async sendVerificationEmail(email: string, token: string, displayName: string): Promise<boolean> {
     if (!this.transporter || !this.isConfigured) {
-      console.error('Email service not configured. Cannot send verification email.');
+      console.error('Email service not configured');
       return false;
     }
 
     try {
-      // Ensure FRONTEND_URL is used from environment for the verification link
       const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/verify-email?token=${token}`;
-
+      
       const mailOptions = {
-        from: `"${process.env.EMAIL_FROM_NAME || 'Skynote'}" <${process.env.SMTP_USER}>`,
+        from: '"Skynote" <kimathityrell@gmail.com>',
         to: email,
         subject: 'Verify Your Skynote Account',
         html: `
@@ -96,21 +84,20 @@ class EmailService {
 
   async sendPasswordResetEmail(email: string, token: string, displayName: string): Promise<boolean> {
     if (!this.transporter || !this.isConfigured) {
-      console.error('Email service not configured. Cannot send password reset email.');
+      console.error('Email service not configured');
       return false;
     }
 
     try {
-      // Ensure FRONTEND_URL is used from environment for the reset link
       const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${token}`;
-
+      
       const mailOptions = {
-        from: `"${process.env.EMAIL_FROM_NAME || 'Skynote'}" <${process.env.SMTP_USER}>`,
+        from: '"Skynote" <kimathityrell@gmail.com>',
         to: email,
         subject: 'Reset Your Skynote Password',
         html: `
           <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
-            <h2 style="color: #dc2626; text-align: center;">Password Reset Request</h2>
+            <h2 style="color: #4f46e5; text-align: center;">Password Reset Request</h2>
             <p>Hi ${displayName},</p>
             <p>We received a request to reset your Skynote account password. Click the button below to create a new password:</p>
             <div style="text-align: center; margin: 30px 0;">
