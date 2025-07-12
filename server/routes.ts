@@ -1,8 +1,4 @@
 /**
- * Week 1: Basic authentication and user management (Tyrell)
- * Week 2: Social features and post system (Nicole) 
- * Week 3: Book integration and achievements (Both)
- * Week 4: Admin panel and email verification (Tyrell), Google OAuth (Nicole)
  * 
  * This file handles all the main API endpoints for our social reading platform.
  * We spent countless hours debugging authentication middleware and getting 
