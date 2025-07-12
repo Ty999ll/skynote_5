@@ -1655,7 +1655,7 @@ app.post("/api/quizzes", authenticateToken, async (req, res) => {
       res.status(500).json({ message: "Internal server error", error: String(error) });
     }
   }
-}); .
+}); 
     // Combine the request data with the server-side user ID BEFORE validation
 
   app.post("/api/quizzes/submit", authenticateToken, async (req, res) => {
