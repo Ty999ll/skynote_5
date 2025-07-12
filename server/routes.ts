@@ -1,10 +1,4 @@
 /**
- * Skynote Social Reading Platform - Main API Routes
- * 
- * Authors: Tyrell Stephenson (ID: 166880) & Nicole Muraguri (ID: 161061)
- * Course: Advanced Web Development Final Project
- * Duration: 4 weeks (November 2024 - December 2024)
- * 
  * Week 1: Basic authentication and user management (Tyrell)
  * Week 2: Social features and post system (Nicole) 
  * Week 3: Book integration and achievements (Both)
