@@ -192,15 +192,7 @@ export const BookDiscoveryPage: React.FC = () => {
                   <Plus className="w-4 h-4" />
                   <span>Want to Read</span>
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => addToReadingList(book, 'reading')}
-                  className="flex items-center justify-center space-x-2 w-full"
-                  disabled={addToReadingListMutation.isPending}
-                >
-                  <Clock className="w-4 h-4" />
-                  <span>Start Reading</span>
-                </Button>
+               
               </div>
             )}
           </div>
