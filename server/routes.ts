@@ -1110,8 +1110,14 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
       }
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       if (followedId === req.user.id) {
         return res.status(400).json({ message: "Cannot follow yourself" });
+      }
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
       }
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
@@ -1127,7 +1133,9 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
       }
       
       // Auto-sync achievements for both users after any follow/unfollow action
-      await syncAndAwardAchievements(req.user.id);
+      if (req.user) {
+        await syncAndAwardAchievements(req.user.id);
+      }
       await syncAndAwardAchievements(followedId);
       
     } catch (error) {
@@ -1293,7 +1301,12 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
       });
       
       // Check if book log already exists for this user and book
-      const existingLog = await storage.getBookLog(req.user!.id, validatedData.bookId);
+      let existingLog;
+      if (typeof validatedData.bookId === "number") {
+        existingLog = await storage.getBookLog(req.user!.id, validatedData.bookId);
+      } else {
+        return res.status(400).json({ message: "Invalid or missing bookId" });
+      }
       
       let bookLog;
       if (existingLog) {

@@ -597,7 +597,11 @@ export class MemStorage implements IStorage {
     const repostedPostIds = userReposts.map(repost => repost.postId);
     return Array.from(this.posts.values())
       .filter(post => repostedPostIds.includes(post.id))
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      .sort((a, b) => {
+        const aTime = a.createdAt ? a.createdAt.getTime() : 0;
+        const bTime = b.createdAt ? b.createdAt.getTime() : 0;
+        return bTime - aTime;
+      });
   }
 
   // Book log methods
