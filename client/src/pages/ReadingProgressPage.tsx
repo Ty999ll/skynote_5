@@ -192,6 +192,7 @@ export const ReadingProgressPage: React.FC = () => {
                   onClick={() => changeStatus(log.id, 'reading')}
                   className="text-xs"
                 >
+                  Start Reading
                 </Button>
               )}
               {log.status === 'reading' && (
