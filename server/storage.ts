@@ -10,7 +10,7 @@ import {
   type Comment, type InsertComment, type Quiz, type InsertQuiz, type QuizQuestion, type InsertQuizQuestion,
   type QuizResult, type InsertQuizResult
 } from "@shared/schema";
-
+export type { User } from "@shared/schema";
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -21,7 +21,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
-  
+
   // Guest session methods
   getGuestSession(sessionId: string): Promise<GuestSession | undefined>;
   createGuestSession(session: InsertGuestSession): Promise<GuestSession>;
@@ -239,6 +239,17 @@ export class MemStorage implements IStorage {
       followersCount: 0,
       followingCount: 0,
       createdAt: new Date(),
+      password: insertUser.password !== undefined ? insertUser.password : null,
+      bio: insertUser.bio !== undefined ? insertUser.bio : null,
+      avatar: insertUser.avatar !== undefined ? insertUser.avatar : null,
+      currentlyReading: insertUser.currentlyReading !== undefined ? insertUser.currentlyReading : null,
+      favoriteQuote: insertUser.favoriteQuote !== undefined ? insertUser.favoriteQuote : null,
+      emailVerificationToken: insertUser.emailVerificationToken !== undefined ? insertUser.emailVerificationToken : null,
+      googleId: insertUser.googleId !== undefined ? insertUser.googleId : null,
+      notificationPreferences: insertUser.notificationPreferences !== undefined ? insertUser.notificationPreferences : null,
+      isAdmin: insertUser.isAdmin !== undefined ? insertUser.isAdmin : null,
+      emailVerified: insertUser.emailVerified !== undefined ? insertUser.emailVerified : null,
+      authProvider: insertUser.authProvider !== undefined ? insertUser.authProvider : null,
     };
     this.users.set(user.id, user);
     return user;
@@ -329,6 +340,8 @@ export class MemStorage implements IStorage {
       id: this.currentGuestSessionId++,
       createdAt: new Date(),
       lastActiveAt: new Date(),
+      preferences: insertSession.preferences !== undefined ? insertSession.preferences : {},
+      viewedContent: insertSession.viewedContent !== undefined ? insertSession.viewedContent : {},
     };
     this.guestSessions.set(session.sessionId, session);
     return session;
@@ -354,8 +367,14 @@ export class MemStorage implements IStorage {
 
   async createBook(insertBook: InsertBook): Promise<Book> {
     const book: Book = {
-      ...insertBook,
       id: this.currentBookId++,
+      title: insertBook.title,
+      author: insertBook.author,
+      description: insertBook.description !== undefined ? insertBook.description : null,
+      isbn: insertBook.isbn !== undefined ? insertBook.isbn : null,
+      coverUrl: insertBook.coverUrl !== undefined ? insertBook.coverUrl : null,
+      openLibraryKey: insertBook.openLibraryKey !== undefined ? insertBook.openLibraryKey : null,
+      averageRating: insertBook.averageRating !== undefined ? insertBook.averageRating : null,
       ratingsCount: 0,
       createdAt: new Date(),
     };
@@ -383,13 +402,19 @@ export class MemStorage implements IStorage {
 
   async createPost(insertPost: InsertPost): Promise<Post> {
     const post: Post = {
-      ...insertPost,
       id: this.currentPostId++,
+      createdAt: new Date(),
+      title: insertPost.title !== undefined ? insertPost.title : null,
+      type: insertPost.type,
+      userId: insertPost.userId !== undefined ? insertPost.userId : null,
+      bookId: insertPost.bookId !== undefined ? insertPost.bookId : null,
+      content: insertPost.content,
+      imageUrl: insertPost.imageUrl !== undefined ? insertPost.imageUrl : null,
+      rating: insertPost.rating !== undefined ? insertPost.rating : null,
       likesCount: 0,
       commentsCount: 0,
       repostsCount: 0,
       isApproved: true,
-      createdAt: new Date(),
     };
     this.posts.set(post.id, post);
     return post;
@@ -433,13 +458,21 @@ export class MemStorage implements IStorage {
 
   async getFeedPosts(userId?: number, type?: string): Promise<Post[]> {
     const allPosts = Array.from(this.posts.values());
-    return allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return allPosts.sort((a, b) => {
+      const bTime = b.createdAt ? b.createdAt.getTime() : 0;
+      const aTime = a.createdAt ? a.createdAt.getTime() : 0;
+      return bTime - aTime;
+    });
   }
 
   async getUserPosts(userId: number): Promise<Post[]> {
     return Array.from(this.posts.values())
       .filter(post => post.userId === userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      .sort((a, b) => {
+        const bTime = b.createdAt ? b.createdAt.getTime() : 0;
+        const aTime = a.createdAt ? a.createdAt.getTime() : 0;
+        return bTime - aTime;
+      });
   }
 
   async getLikedPosts(userId: number): Promise<Post[]> {
@@ -447,7 +480,11 @@ export class MemStorage implements IStorage {
     const likedPostIds = userLikes.map(like => like.postId);
     return Array.from(this.posts.values())
       .filter(post => likedPostIds.includes(post.id))
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      .sort((a, b) => {
+        const bTime = b.createdAt ? b.createdAt.getTime() : 0;
+        const aTime = a.createdAt ? a.createdAt.getTime() : 0;
+        return bTime - aTime;
+      });
   }
 
   // Social methods
@@ -497,7 +534,7 @@ export class MemStorage implements IStorage {
     // Update post likes count
     const post = this.posts.get(postId);
     if (post) {
-      this.posts.set(postId, { ...post, likesCount: post.likesCount + 1 });
+      this.posts.set(postId, { ...post, likesCount: (post.likesCount ?? 0) + 1 });
     }
     
     return like;
@@ -509,7 +546,7 @@ export class MemStorage implements IStorage {
     if (deleted) {
       // Update post likes count
       const post = this.posts.get(postId);
-      if (post && post.likesCount > 0) {
+      if (post && post.likesCount !== null && post.likesCount > 0) {
         this.posts.set(postId, { ...post, likesCount: post.likesCount - 1 });
       }
     }
@@ -527,7 +564,7 @@ export class MemStorage implements IStorage {
       id: this.currentRepostId++,
       userId,
       postId,
-      comment,
+      comment: comment !== undefined ? comment : null,
       createdAt: new Date(),
     };
     this.reposts.set(`${userId}-${postId}`, repost);
@@ -547,8 +584,8 @@ export class MemStorage implements IStorage {
     if (deleted) {
       // Update post reposts count
       const post = this.posts.get(postId);
-      if (post && post.repostsCount > 0) {
-        this.posts.set(postId, { ...post, repostsCount: post.repostsCount - 1 });
+      if (post && (post.repostsCount ?? 0) > 0) {
+        this.posts.set(postId, { ...post, repostsCount: (post.repostsCount ?? 0) - 1 });
       }
     }
     
@@ -570,9 +607,15 @@ export class MemStorage implements IStorage {
 
   async createBookLog(insertBookLog: InsertBookLog): Promise<BookLog> {
     const bookLog: BookLog = {
-      ...insertBookLog,
       id: this.currentBookLogId++,
       createdAt: new Date(),
+      userId: insertBookLog.userId !== undefined ? insertBookLog.userId : null,
+      progress: insertBookLog.progress !== undefined ? insertBookLog.progress : null,
+      status: insertBookLog.status,
+      bookId: insertBookLog.bookId !== undefined ? insertBookLog.bookId : null,
+      rating: insertBookLog.rating !== undefined ? insertBookLog.rating : null,
+      startDate: insertBookLog.startDate !== undefined ? insertBookLog.startDate : null,
+      finishDate: insertBookLog.finishDate !== undefined ? insertBookLog.finishDate : null,
     };
     this.bookLogs.set(`${bookLog.userId}-${bookLog.bookId}`, bookLog);
     return bookLog;
@@ -592,7 +635,11 @@ export class MemStorage implements IStorage {
     if (status) {
       return userLogs.filter(log => log.status === status);
     }
-    return userLogs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return userLogs.sort((a, b) => {
+      const bTime = b.createdAt ? b.createdAt.getTime() : 0;
+      const aTime = a.createdAt ? a.createdAt.getTime() : 0;
+      return bTime - aTime;
+    });
   }
 
   // Achievement methods
@@ -608,6 +655,8 @@ export class MemStorage implements IStorage {
     const achievement: Achievement = {
       ...insertAchievement,
       id: this.currentAchievementId++,
+      requirement: insertAchievement.requirement,
+      isActive: insertAchievement.isActive ?? true,
     };
     this.achievements.set(achievement.id, achievement);
     return achievement;
@@ -648,7 +697,7 @@ export class MemStorage implements IStorage {
       if (achievement) {
         const user = this.users.get(userId);
         if (user) {
-          user.points += achievement.points;
+          user.points = (user.points ?? 0) + achievement.points;
           this.users.set(userId, user);
         }
       }
@@ -666,8 +715,12 @@ export class MemStorage implements IStorage {
 
   async createNotification(insertNotification: InsertNotification): Promise<Notification> {
     const notification: Notification = {
-      ...insertNotification,
       id: this.currentNotificationId++,
+      title: insertNotification.title,
+      message: insertNotification.message,
+      type: insertNotification.type,
+      data: insertNotification.data ?? {},
+      userId: insertNotification.userId ?? null,
       isRead: false,
       createdAt: new Date(),
     };
@@ -687,11 +740,14 @@ export class MemStorage implements IStorage {
   // Content report methods
   async createContentReport(insertReport: InsertContentReport): Promise<ContentReport> {
     const report: ContentReport = {
-      ...insertReport,
       id: this.currentContentReportId++,
-      status: "pending",
-      reviewedBy: null,
       createdAt: new Date(),
+      description: insertReport.description !== undefined ? insertReport.description : null,
+      postId: insertReport.postId !== undefined ? insertReport.postId : null,
+      status: "pending",
+      reporterId: insertReport.reporterId !== undefined ? insertReport.reporterId : null,
+      reason: insertReport.reason,
+      reviewedBy: null,
     };
     this.contentReports.set(report.id, report);
     return report;
@@ -702,7 +758,11 @@ export class MemStorage implements IStorage {
     if (status) {
       return reports.filter(report => report.status === status);
     }
-    return reports.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return reports.sort((a, b) => {
+      const bTime = b.createdAt ? b.createdAt.getTime() : 0;
+      const aTime = a.createdAt ? a.createdAt.getTime() : 0;
+      return bTime - aTime;
+    });
   }
 
   async updateContentReport(id: number, updates: Partial<ContentReport>): Promise<ContentReport | undefined> {
@@ -718,7 +778,11 @@ export class MemStorage implements IStorage {
   async getPostComments(postId: number): Promise<Comment[]> {
     return Array.from(this.comments.values())
       .filter(comment => comment.postId === postId)
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      .sort((a, b) => {
+        const aTime = a.createdAt ? a.createdAt.getTime() : 0;
+        const bTime = b.createdAt ? b.createdAt.getTime() : 0;
+        return aTime - bTime;
+      });
   }
 
   async createComment(insertComment: InsertComment): Promise<Comment> {
@@ -726,11 +790,13 @@ export class MemStorage implements IStorage {
       ...insertComment,
       id: this.currentCommentId++,
       createdAt: new Date(),
+      userId: insertComment.userId !== undefined ? insertComment.userId : null,
+      postId: insertComment.postId !== undefined ? insertComment.postId : null,
     };
     this.comments.set(comment.id, comment);
     
     // Update post comments count
-    const post = this.posts.get(comment.postId);
+    const post = this.posts.get(comment.postId ?? 0);
     if (post) {
       post.commentsCount = (post.commentsCount || 0) + 1;
       this.posts.set(post.id, post);
@@ -752,7 +818,7 @@ export class MemStorage implements IStorage {
       booksRead: userBookLogs.filter(log => log.status === 'finished').length,
       achievementsUnlocked: userAchievements.filter(ua => ua.isUnlocked).length,
       totalPoints: userAchievements.reduce((sum, ua) => {
-        if (ua.isUnlocked) {
+        if (ua.isUnlocked && ua.achievementId !== null) {
           const achievement = this.achievements.get(ua.achievementId);
           return sum + (achievement?.points || 0);
         }

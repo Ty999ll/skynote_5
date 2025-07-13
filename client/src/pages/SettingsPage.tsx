@@ -33,20 +33,7 @@ interface UserSettings {
     favoriteQuote: string;
     isProfilePublic: boolean;
   };
-  notifications: {
-    emailNotifications: boolean;
-    pushNotifications: boolean;
-    followNotifications: boolean;
-    likeNotifications: boolean;
-    commentNotifications: boolean;
-    repostNotifications: boolean;
-  };
-  privacy: {
-    showReadingActivity: boolean;
-    allowFollowers: boolean;
-    showAchievements: boolean;
-    dataSharing: boolean;
-  };
+ 
   reading: {
     yearlyGoal: number;
     preferredGenres: string[];
@@ -75,20 +62,8 @@ export default function SettingsPage() {
       favoriteQuote: user?.favoriteQuote || '',
       isProfilePublic: true,
     },
-    notifications: {
-      emailNotifications: true,
-      pushNotifications: true,
-      followNotifications: true,
-      likeNotifications: true,
-      commentNotifications: true,
-      repostNotifications: false,
-    },
-    privacy: {
-      showReadingActivity: true,
-      allowFollowers: true,
-      showAchievements: true,
-      dataSharing: false,
-    },
+   
+
     reading: {
       yearlyGoal: 24,
       preferredGenres: ['Fiction', 'Mystery'],
@@ -163,9 +138,6 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'profile', label: 'Profile Customization', icon: User },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'privacy', label: 'Privacy', icon: Shield },
-    { id: 'reading', label: 'Reading Preferences', icon: Book },
   ];
 
   if (isLoading) {
@@ -253,159 +225,8 @@ export default function SettingsPage() {
     </Card>
   );
 
-  const renderNotificationSettings = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bell className="w-5 h-5" />
-          Notification Settings
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Email Notifications</Label>
-              <p className="text-sm text-gray-500">Receive updates via email</p>
-            </div>
-            <Switch
-              checked={settings.notifications.emailNotifications}
-              onCheckedChange={(checked) => updateSetting('notifications', 'emailNotifications', checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Push Notifications</Label>
-              <p className="text-sm text-gray-500">Receive browser notifications</p>
-            </div>
-            <Switch
-              checked={settings.notifications.pushNotifications}
-              onCheckedChange={(checked) => updateSetting('notifications', 'pushNotifications', checked)}
-            />
-          </div>
-
           <Separator />
 
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>New Followers</Label>
-              <p className="text-sm text-gray-500">When someone follows you</p>
-            </div>
-            <Switch
-              checked={settings.notifications.followNotifications}
-              onCheckedChange={(checked) => updateSetting('notifications', 'followNotifications', checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Likes on Posts</Label>
-              <p className="text-sm text-gray-500">When someone likes your posts</p>
-            </div>
-            <Switch
-              checked={settings.notifications.likeNotifications}
-              onCheckedChange={(checked) => updateSetting('notifications', 'likeNotifications', checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Comments</Label>
-              <p className="text-sm text-gray-500">When someone comments on your posts</p>
-            </div>
-            <Switch
-              checked={settings.notifications.commentNotifications}
-              onCheckedChange={(checked) => updateSetting('notifications', 'commentNotifications', checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Reposts</Label>
-              <p className="text-sm text-gray-500">When someone reposts your content</p>
-            </div>
-            <Switch
-              checked={settings.notifications.repostNotifications}
-              onCheckedChange={(checked) => updateSetting('notifications', 'repostNotifications', checked)}
-            />
-          </div>
-        </div>
-
-        <Button onClick={handleSaveSettings} disabled={updateSettingsMutation.isPending}>
-          <Save className="w-4 h-4 mr-2" />
-          {updateSettingsMutation.isPending ? 'Saving...' : 'Save Notifications'}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-
-  const renderPrivacySettings = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="w-5 h-5" />
-          Privacy Settings
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Show Reading Activity</Label>
-              <p className="text-sm text-gray-500">Display your reading progress publicly</p>
-            </div>
-            <Switch
-              checked={settings.privacy.showReadingActivity}
-              onCheckedChange={(checked) => updateSetting('privacy', 'showReadingActivity', checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Allow Followers</Label>
-              <p className="text-sm text-gray-500">Let others follow your reading journey</p>
-            </div>
-            <Switch
-              checked={settings.privacy.allowFollowers}
-              onCheckedChange={(checked) => updateSetting('privacy', 'allowFollowers', checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Show Achievements</Label>
-              <p className="text-sm text-gray-500">Display your reading achievements publicly</p>
-            </div>
-            <Switch
-              checked={settings.privacy.showAchievements}
-              onCheckedChange={(checked) => updateSetting('privacy', 'showAchievements', checked)}
-            />
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Data Sharing</Label>
-              <p className="text-sm text-gray-500">Share anonymized reading data for research</p>
-            </div>
-            <Switch
-              checked={settings.privacy.dataSharing}
-              onCheckedChange={(checked) => updateSetting('privacy', 'dataSharing', checked)}
-            />
-          </div>
-        </div>
-
-        <Button onClick={handleSaveSettings} disabled={updateSettingsMutation.isPending}>
-          <Save className="w-4 h-4 mr-2" />
-          {updateSettingsMutation.isPending ? 'Saving...' : 'Save Privacy Settings'}
-        </Button>
-      </CardContent>
-    </Card>
-  );
 
   const renderReadingSettings = () => (
     <Card>
@@ -486,11 +307,6 @@ export default function SettingsPage() {
     switch (activeTab) {
       case 'profile':
         return renderProfileSettings();
-      case 'notifications':
-        return renderNotificationSettings();
-      case 'privacy':
-        return renderPrivacySettings();
-      case 'reading':
         return renderReadingSettings();
       default:
         return renderProfileSettings();

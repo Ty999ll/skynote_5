@@ -41,7 +41,12 @@ export const ReadingProgressPage: React.FC = () => {
     enabled: !!user,
   });
 
-  const { data: readingStats } = useQuery({
+  type ReadingStats = {
+    yearlyGoal: number;
+    // add other stats properties if needed
+  };
+
+  const { data: readingStats } = useQuery<ReadingStats>({
     queryKey: ['/api/users', user?.id, 'reading-stats'],
     enabled: !!user,
   });

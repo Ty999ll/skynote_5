@@ -1,18 +1,22 @@
 import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Strategy as GoogleStrategy, VerifyCallback } from 'passport-google-oauth20';
 import { storage } from './storage';
 import bcrypt from 'bcryptjs';
 
 // Google OAuth configuration
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  throw new Error('Missing Google OAuth environment variables: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
+}
 
 export function configureGoogleAuth() {
   passport.use(new GoogleStrategy({
-    clientID: GOOGLE_CLIENT_ID,
-    clientSecret: GOOGLE_CLIENT_SECRET,
+    clientID: GOOGLE_CLIENT_ID!,
+    clientSecret: GOOGLE_CLIENT_SECRET!,
     callbackURL: '/auth/google/callback'
-  }, async (accessToken, refreshToken, profile, done) => {
+  }, async (accessToken: string, refreshToken: string, profile: any, done: VerifyCallback) => {
     try {
       // Check if user exists with Google ID
       let user = await storage.getUserByGoogleId(profile.id);
@@ -70,10 +74,10 @@ export function configureGoogleAuth() {
         });
       }
 
-      return done(new Error('No email provided by Google'), null);
+      return done(new Error('No email provided by Google'), undefined);
     } catch (error) {
       console.error('Google OAuth error:', error);
-      return done(error, null);
+      return done(error, undefined);
     }
   }));
 }

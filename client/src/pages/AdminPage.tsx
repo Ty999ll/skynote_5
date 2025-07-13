@@ -69,7 +69,16 @@ const AdminPage: React.FC = () => {
     staleTime: 0, // Always fetch fresh data
   });
 
-  const { data: leaderboard = [] } = useQuery({
+  interface LeaderboardUser {
+    id: number;
+    displayName: string;
+    username: string;
+    points: number;
+    followersCount: number;
+    isAdmin: boolean;
+  }
+
+  const { data: leaderboard = [] } = useQuery<LeaderboardUser[]>({
     queryKey: ['/api/leaderboard', 20],
     refetchInterval: 10000, // Refetch every 10 seconds
     staleTime: 0,

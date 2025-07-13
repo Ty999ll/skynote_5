@@ -5,7 +5,7 @@
  * the JWT tokens to work properly across all routes.
  */
 
-import type { Express, Request, Response, NextFunction } from "express";
+import { type Express, type Request, type Response, type NextFunction, query } from "express";
 import { createServer, type Server } from "http";
 import session from 'express-session';
 import passport from './passport';
@@ -13,17 +13,18 @@ import { emailService } from './email-config';
 import { configureGoogleAuth, setupGoogleRoutes } from './google-auth';
 import { insertQuizSchema, insertQuizQuestionSchema } from '@shared/schema';
 import { z } from 'zod';
-// Extend Express Request type to include user
+// Extend Express User type to include custom fields
 // Nicole figured out this TypeScript declaration after 2 hours of type errors!
+// No need to import PassportUser; define your own user type extension below.
+
 declare global {
   namespace Express {
-    interface Request {
-      user?: {
-        id: number;
-        username: string;
-        email: string;
-        isAdmin: boolean;
-      };
+    interface User {
+      id: number;
+      username: string;
+      email: string;
+      isAdmin: boolean;
+      // Add other custom fields as needed
     }
   }
 }
@@ -31,7 +32,6 @@ import { DatabaseStorage } from "./db-storage-fixed";
 const storage = new DatabaseStorage();
 import { db } from "./db";
 import { desc, sql, eq } from "drizzle-orm";
-import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { 
@@ -144,7 +144,7 @@ const requireAdmin = async (req: Request, res: Response, next: NextFunction) => 
     return res.status(401).json({ message: 'Authentication required' });
   }
 
-  const user = await storage.getUser(req.user.id);
+  const user = await storage.getUser((req.user as { id: number }).id);
   if (!user || !user.isAdmin) {
     return res.status(403).json({ message: 'Admin access required' });
   }
@@ -504,6 +504,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
+      if (!user.password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -545,6 +548,9 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
       }
 
       // Hash password
+      if (!validatedData.password) {
+        return res.status(400).json({ message: "Password is required for admin registration" });
+      }
       const hashedPassword = await bcrypt.hash(validatedData.password, 10);
       
       // Create admin user
@@ -614,7 +620,7 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
   // User routes
   app.get("/api/users/me", authenticateToken, async (req, res) => {
     try {
-      const user = await storage.getUser(req.user.id);
+      const user = await storage.getUser((req.user as { id: number }).id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -641,7 +647,7 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
       const userId = parseInt(req.params.id);
       
       // Only allow users to update their own profile
-      if (userId !== req.user.id) {
+      if (!req.user || userId !== (req.user as { id: number }).id) {
         return res.status(403).json({ message: "Not authorized to update this profile" });
       }
 
@@ -678,7 +684,7 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
       const userId = parseInt(req.params.id);
       
       // Only allow users to see their own settings
-      if (userId !== req.user.id) {
+      if (!req.user || userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized" });
       }
 
@@ -722,7 +728,7 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
       const userId = parseInt(req.params.id);
       
       // Only allow users to update their own settings
-      if (userId !== req.user.id) {
+      if (!req.user || userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized" });
       }
 
@@ -793,7 +799,7 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
       console.error('Search books error:', error);
       // Fallback to local search if Open Library fails
       try {
-        const books = await storage.searchBooks(query as string);
+        const books = await storage.searchBooks(req.query.q as string);
         res.json(books);
       } catch (fallbackError) {
         res.status(500).json({ message: "Search service unavailable", error });
@@ -905,14 +911,16 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
       
       const validatedData = insertPostSchema.parse({
         ...req.body,
-        userId: req.user.id,
+        userId: req.user!.id,
         bookId,
       });
       
       const post = await storage.createPost(validatedData);
       
       // Auto-sync all achievements after post creation
-      await syncAndAwardAchievements(req.user.id);
+      if (req.user) {
+        await syncAndAwardAchievements(req.user.id);
+      }
       
       res.status(201).json(post);
     } catch (error) {
@@ -929,7 +937,7 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
         return res.status(404).json({ message: "Post not found" });
       }
       
-      if (existingPost.userId !== req.user.id) {
+      if (!req.user || existingPost.userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to edit this post" });
       }
       
@@ -995,7 +1003,7 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
       const userId = parseInt(req.params.id);
       
       // Only allow users to see their own liked posts
-      if (userId !== req.user.id) {
+      if (!req.user || userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized" });
       }
       
@@ -1041,6 +1049,9 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
   app.post("/api/posts/:id/like", authenticateToken, async (req, res) => {
     try {
       const postId = parseInt(req.params.id);
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       const isLiked = await storage.isPostLiked(req.user.id, postId);
       
       if (isLiked) {
@@ -1059,6 +1070,10 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
     try {
       const postId = parseInt(req.params.id);
       const { comment } = req.body;
+
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       
       const repost = await storage.repostPost(req.user.id, postId, comment);
       res.status(201).json(repost);
@@ -1071,10 +1086,36 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
     try {
       const followedId = parseInt(req.params.id);
       
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       if (followedId === req.user.id) {
         return res.status(400).json({ message: "Cannot follow yourself" });
       }
-      
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       const isFollowing = await storage.isFollowing(req.user.id, followedId);
       
       if (isFollowing) {
@@ -1497,21 +1538,25 @@ if (adminKey !== ADMIN_REGISTRATION_KEY) {
             const postId = report.postId;
             
             // Delete all foreign key references to the post first
-            console.log(`Deleting likes for post ${postId}...`);
-            await tx.delete(likes).where(eq(likes.postId, postId));
-            
-            console.log(`Deleting reposts for post ${postId}...`);
-            await tx.delete(reposts).where(eq(reposts.postId, postId));
-            
-            console.log(`Deleting comments for post ${postId}...`);
-            await tx.delete(comments).where(eq(comments.postId, postId));
-            
-            console.log(`Deleting content reports for post ${postId}...`);
-            await tx.delete(contentReports).where(eq(contentReports.postId, postId));
-            
-            // Finally delete the post itself
-            console.log(`Deleting post ${postId}...`);
-            await tx.delete(posts).where(eq(posts.id, postId));
+            if (postId != null) {
+              console.log(`Deleting likes for post ${postId}...`);
+              await tx.delete(likes).where(eq(likes.postId, postId));
+
+              console.log(`Deleting reposts for post ${postId}...`);
+              await tx.delete(reposts).where(eq(reposts.postId, postId));
+
+              console.log(`Deleting comments for post ${postId}...`);
+              await tx.delete(comments).where(eq(comments.postId, postId));
+
+              console.log(`Deleting content reports for post ${postId}...`);
+              await tx.delete(contentReports).where(eq(contentReports.postId, postId));
+
+              // Finally delete the post itself
+              console.log(`Deleting post ${postId}...`);
+              await tx.delete(posts).where(eq(posts.id, postId));
+            } else {
+              console.warn('postId is null, skipping deletion of related data.');
+            }
           });
           
           console.log(`Successfully deleted post ${report.postId} and all related data`);

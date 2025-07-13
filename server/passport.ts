@@ -2,6 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { storage } from './storage';
 import { emailService } from './email';
+import type { User } from './storage';
 
 // Configure Google OAuth Strategy
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -47,7 +48,12 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         });
       }
 
-      return done(null, user);
+      if (user) {
+        user.isAdmin = !!user.isAdmin;
+        // Ensure isAdmin is boolean and user is defined before passing to done
+        return done(null, { ...user, isAdmin: !!user.isAdmin });
+      }
+      return done(null, undefined);
     } catch (error) {
       console.error('Google OAuth error:', error);
       return done(error);
@@ -65,7 +71,13 @@ passport.serializeUser((user: any, done) => {
 passport.deserializeUser(async (id: number, done) => {
   try {
     const user = await storage.getUser(id);
-    done(null, user);
+    if (user) {
+      // Ensure isAdmin is always boolean and not null
+      const safeUser: User = { ...user, isAdmin: Boolean(user.isAdmin) };
+      done(null, safeUser);
+    } else {
+      done(null, null);
+    }
   } catch (error) {
     done(error);
   }
