@@ -359,16 +359,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('Email verification failed to send, but user was created');
       }
 
-      res.status(201).json({ 
-        message: "Registration successful! Please check your email to verify your account.",
-        user: { 
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.displayName,
-          emailVerified: user.emailVerified
-        }
-      });
+      const token = jwt.sign(
+  { id: user.id, username: user.username, email: user.email, isAdmin: user.isAdmin },
+  JWT_SECRET,
+  { expiresIn: "7d" }
+);
+
+res.status(201).json({ 
+  message: "Registration successful! Please check your email to verify your account.",
+  user: { 
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    displayName: user.displayName,
+    emailVerified: user.emailVerified
+  },
+  token
+});
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ message: "Registration failed" });
